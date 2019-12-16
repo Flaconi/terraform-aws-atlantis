@@ -227,10 +227,10 @@ variable "atlantis_allowed_repo_names" {
   default     = []
 }
 
-variable "allow_repo_config" {
-  description = "When true allows the use of atlantis.yaml config files within the source repos."
+variable "atlantis_repo_config_json" {
+  description = "The config to be used to overwrite the current config"
   type        = string
-  default     = "false"
+  default     = "{\"repos\":[{\"id\":\"/.*/\", \"allowed_overrides\":[\"apply_requirements\",\"workflow\"], \"allow_custom_workflows\":true}]}"
 }
 
 # Github
@@ -270,6 +270,12 @@ variable "atlantis_bitbucket_user" {
   description = "Bitbucket username that is running the Atlantis command"
   type        = string
   default     = ""
+}
+
+variable "terragrunt_version" {
+  description = "Terragrunt version to download"
+  type        = string
+  default     = "v0.21.1"
 }
 
 variable "atlantis_bitbucket_user_token" {

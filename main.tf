@@ -14,21 +14,21 @@ locals {
   atlantis_url_events = "${local.atlantis_url}/events"
 
   # Include only one group of secrets - for github, gitlab or bitbucket
-  has_secrets = var.atlantis_gitlab_user_token != "" || var.atlantis_github_user_token != "" || var.atlantis_bitbucket_user_token != ""
+  has_secrets = true
 
-  secret_name_key = local.has_secrets ? var.atlantis_gitlab_user_token != "" ? "ATLANTIS_GITLAB_TOKEN" : var.atlantis_github_user_token != "" ? "ATLANTIS_GH_TOKEN" : "ATLANTIS_BITBUCKET_TOKEN" : "unknown_secret_name_key"
+  secret_name_key = "ATLANTIS_GH_TOKEN"
 
-  secret_name_value_from = local.has_secrets ? var.atlantis_gitlab_user_token != "" ? var.atlantis_gitlab_user_token_ssm_parameter_name : var.atlantis_github_user_token != "" ? var.atlantis_github_user_token_ssm_parameter_name : var.atlantis_bitbucket_user_token_ssm_parameter_name : "unknown_secret_name_value"
+  secret_name_value_from = var.atlantis_github_user_token_ssm_parameter_name
 
-  secret_webhook_key = local.has_secrets ? var.atlantis_gitlab_user_token != "" ? "ATLANTIS_GITLAB_WEBHOOK_SECRET" : var.atlantis_github_user_token != "" ? "ATLANTIS_GH_WEBHOOK_SECRET" : "ATLANTIS_BITBUCKET_WEBHOOK_SECRET" : "unknown_secret_webhook_key"
+  secret_webhook_key = "ATLANTIS_GH_WEBHOOK_SECRET"
 
   # Container definitions
   container_definitions = var.custom_container_definitions == "" ? var.atlantis_bitbucket_user_token != "" ? module.container_definition_bitbucket.json : module.container_definition_github_gitlab.json : var.custom_container_definitions
 
   container_definition_environment = [
     {
-      name  = "ATLANTIS_ALLOW_REPO_CONFIG"
-      value = var.allow_repo_config
+      name  = "ATLANTIS_REPO_CONFIG_JSON"
+      value = var.atlantis_repo_config_json
     },
     {
       name  = "ATLANTIS_GITLAB_HOSTNAME"
@@ -228,6 +228,15 @@ resource "aws_lb_listener_rule" "redirect_http_to_https" {
     values = ["*"]
   }
 }
+## Github ipranges
+
+provider "github" {
+  anonymous = true
+	individual = true
+}
+
+data "github_ip_ranges" "this" {}
+
 
 ###################
 # Security groups
@@ -240,7 +249,7 @@ module "alb_https_sg" {
   vpc_id      = local.vpc_id
   description = "Security group with HTTPS ports open for specific IPv4 CIDR block (or everybody), egress ports are all world open"
 
-  ingress_cidr_blocks = var.alb_ingress_cidr_blocks
+  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks,var.alb_ingress_cidr_blocks)
 
   tags = local.tags
 }
@@ -253,7 +262,7 @@ module "alb_http_sg" {
   vpc_id      = local.vpc_id
   description = "Security group with HTTP ports open for specific IPv4 CIDR block (or everybody), egress ports are all world open"
 
-  ingress_cidr_blocks = var.alb_ingress_cidr_blocks
+  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks,var.alb_ingress_cidr_blocks)
 
   tags = local.tags
 }
@@ -359,10 +368,7 @@ data "aws_iam_policy_document" "ecs_task_access_secrets" {
     effect = "Allow"
 
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.webhook_ssm_parameter_name}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.atlantis_github_user_token_ssm_parameter_name}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.atlantis_gitlab_user_token_ssm_parameter_name}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.atlantis_bitbucket_user_token_ssm_parameter_name}",
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/atlantis/*",
     ]
 
     actions = [
@@ -386,8 +392,6 @@ data "aws_iam_policy_document" "ecs_task_access_secrets_with_kms" {
 }
 
 resource "aws_iam_role_policy" "ecs_task_access_secrets" {
-  count = var.atlantis_github_user_token != "" || var.atlantis_gitlab_user_token != "" || var.atlantis_bitbucket_user_token != "" ? 1 : 0
-
   name = "ECSTaskAccessSecretsPolicy"
 
   role = aws_iam_role.ecs_task_execution.id
