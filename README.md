@@ -124,6 +124,7 @@ If all provided subnets are public (no NAT gateway) then `ecs_service_assign_pub
 | alb\_log\_location\_prefix | S3 prefix within the log_bucket_name under which logs are stored. | string | `""` | no |
 | alb\_logging\_enabled | Controls if the ALB will log requests to S3. | bool | `"false"` | no |
 | allow\_repo\_config | When true allows the use of atlantis.yaml config files within the source repos. | string | `"false"` | no |
+| allowed\_assume\_resources | List of roles which can be assumed by ecs_task_execution role | list(string) | `[]` | no |
 | atlantis\_allowed\_repo\_names | Github repositories where webhook should be created | list(string) | `[]` | no |
 | atlantis\_bitbucket\_user | Bitbucket username that is running the Atlantis command | string | `""` | no |
 | atlantis\_bitbucket\_user\_token | Bitbucket token of the user that is running the Atlantis command | string | `""` | no |
