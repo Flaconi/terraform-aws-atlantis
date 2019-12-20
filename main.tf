@@ -142,8 +142,7 @@ resource "aws_ssm_parameter" "atlantis_bitbucket_user_token" {
 # VPC
 ###################
 module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "v2.5.0"
+  source  = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v2.5.0"
 
   create_vpc = var.vpc_id == ""
 
@@ -164,8 +163,7 @@ module "vpc" {
 # ALB
 ###################
 module "alb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "v4.0.0"
+  source  = "github.com/terraform-aws-modules/terraform-aws-alb.git?ref=v4.0.0"
 
   load_balancer_name = var.name
 
@@ -242,8 +240,7 @@ data "github_ip_ranges" "this" {}
 # Security groups
 ###################
 module "alb_https_sg" {
-  source  = "terraform-aws-modules/security-group/aws//modules/https-443"
-  version = "v3.0.1"
+  source  = "github.com/terraform-aws-modules/terraform-aws-security-group.git//modules//https-443?ref=v3.0.1"
 
   name        = "${var.name}-alb-https"
   vpc_id      = local.vpc_id
@@ -255,8 +252,7 @@ module "alb_https_sg" {
 }
 
 module "alb_http_sg" {
-  source  = "terraform-aws-modules/security-group/aws//modules/http-80"
-  version = "v3.0.1"
+  source  = "github.com/terraform-aws-modules/terraform-aws-security-group.git//modules/http-80?ref=v3.0.1"
 
   name        = "${var.name}-alb-http"
   vpc_id      = local.vpc_id
@@ -268,8 +264,7 @@ module "alb_http_sg" {
 }
 
 module "atlantis_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "v3.0.1"
+  source  = "github.com/terraform-aws-modules/terraform-aws-security-group.git?ref=v3.0.1"
 
   name        = var.name
   vpc_id      = local.vpc_id
@@ -296,8 +291,7 @@ module "atlantis_sg" {
 # ACM (SSL certificate)
 ###################
 module "acm" {
-  source  = "terraform-aws-modules/acm/aws"
-  version = "v2.0.0"
+  source  = "github.com/terraform-aws-modules/terraform-aws-acm.git?ref=v2.0.0"
 
   create_certificate = var.certificate_arn == ""
 
@@ -329,8 +323,7 @@ resource "aws_route53_record" "atlantis" {
 # ECS
 ###################
 module "ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-  version = "v2.0.0"
+  source  = "github.com/terraform-aws-modules/terraform-aws-ecs.git?ref=v2.0.0"
 
   name = var.name
 }
@@ -428,8 +421,7 @@ resource "aws_iam_role_policy" "assume_allow" {
 }
 
 module "container_definition_github_gitlab" {
-  source  = "cloudposse/ecs-container-definition/aws"
-  version = "v0.15.0"
+  source  = "github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=0.15.0"
 
   container_name  = var.name
   container_image = local.atlantis_image
@@ -465,8 +457,7 @@ module "container_definition_github_gitlab" {
 }
 
 module "container_definition_bitbucket" {
-  source  = "cloudposse/ecs-container-definition/aws"
-  version = "v0.15.0"
+  source  = "github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=0.15.0"
 
   container_name  = var.name
   container_image = local.atlantis_image
