@@ -231,7 +231,8 @@ resource "aws_lb_listener_rule" "redirect_http_to_https" {
 ## Github ipranges
 
 provider "github" {
-  anonymous = true
+  version    = "<=2.8.1"
+  anonymous  = true
 	individual = true
 }
 
