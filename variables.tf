@@ -161,6 +161,12 @@ variable "ecs_service_desired_count" {
   default     = 1
 }
 
+variable "ecs_service_platform_version" {
+  description = "AWS Fargate platform versions, when specifying a platform version, you can use either a specific version number, for example 1.4.0, or LATEST (which uses the 1.3.0 platform version)"
+  type        = string
+  default     = "LATEST"
+}
+
 variable "ecs_service_deployment_maximum_percent" {
   description = "The upper limit (as a percentage of the service's desiredCount) of the number of running tasks that can be running in a service during a deployment"
   type        = number
