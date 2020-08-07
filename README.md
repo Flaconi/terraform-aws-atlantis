@@ -57,7 +57,7 @@ $ cd terraform-aws-atlantis
 ### Run Atlantis as a Terraform module
 
 This way allows integration with your existing Terraform configurations.
- 
+
 ```hcl
 module "atlantis" {
   source  = "terraform-aws-modules/atlantis/aws"
@@ -153,6 +153,7 @@ If all provided subnets are public (no NAT gateway) then `ecs_service_assign_pub
 | ecs\_service\_deployment\_maximum\_percent | The upper limit (as a percentage of the service's desiredCount) of the number of running tasks that can be running in a service during a deployment | number | `"200"` | no |
 | ecs\_service\_deployment\_minimum\_healthy\_percent | The lower limit (as a percentage of the service's desiredCount) of the number of running tasks that must remain running and healthy in a service during a deployment | number | `"50"` | no |
 | ecs\_service\_desired\_count | The number of instances of the task definition to place and keep running | number | `"1"` | no |
+| ecs\_service\_platform\_version | AWS Fargate platform versions, when specifying a platform version, you can use either a specific version number, for example 1.4.0, or LATEST (which uses the 1.3.0 platform version) | string | `"LATEST"` | no |
 | ecs\_task\_cpu | The number of cpu units used by the task | number | `"256"` | no |
 | ecs\_task\_memory | The amount (in MiB) of memory used by the task | number | `"512"` | no |
 | name | Name to use on all resources created (VPC, ALB, etc) | string | `"atlantis"` | no |
