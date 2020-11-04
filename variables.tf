@@ -461,7 +461,7 @@ variable "atlantis_github_user" {
 variable "atlantis_github_user_token" {
   description = "GitHub token of the user that is running the Atlantis command"
   type        = string
-  default     = "bot-shop-ci"
+  default     = ""
 }
 
 variable "atlantis_github_webhook_secret" {
