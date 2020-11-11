@@ -76,3 +76,54 @@ output "alb_zone_id" {
   description = "Zone ID of alb"
   value       = module.alb.this_lb_zone_id
 }
+
+# EFS
+output "access_point_arns" {
+  description = "EFS AP ARNs"
+  value       = module.efs.access_point_arns
+}
+
+output "access_point_ids" {
+  description = "EFS AP ids"
+  value       = module.efs.access_point_ids
+}
+
+output "efs_arn" {
+  description = "EFS ARN"
+  value       = module.efs.arn
+}
+
+output "efs_dns_name" {
+  description = "EFS DNS name"
+  value       = module.efs.dns_name
+}
+
+output "efs_host" {
+  description = "Route53 DNS hostname for the EFS"
+  value       = module.efs.host
+}
+
+output "efs_id" {
+  description = "EFS ID"
+  value       = module.efs.id
+}
+
+output "mount_target_dns_names" {
+  description = "List of EFS mount target DNS names"
+  value       = module.efs.mount_target_dns_names
+}
+
+output "mount_target_ids" {
+  description = "List of EFS mount target IDs (one per Availability Zone)"
+  value       = module.efs.mount_target_ids
+}
+
+output "mount_target_ips" {
+  description = "List of EFS mount target IPs (one per Availability Zone)"
+  value       = module.efs.mount_target_ips
+}
+
+output "efs_security_group_id" {
+  description = "EFS Security Group ID"
+  value       = module.efs.security_group_id
+}
