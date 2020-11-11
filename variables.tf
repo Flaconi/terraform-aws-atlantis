@@ -40,6 +40,12 @@ variable "atlantis_fqdn" {
   default     = null
 }
 
+variable "atlantis_data_dir" {
+  description = ""
+  type        = string
+  default     = null
+}
+
 # VPC
 variable "vpc_id" {
   description = "ID of an existing VPC where resources will be created"
@@ -154,6 +160,13 @@ variable "alb_listener_ssl_policy_default" {
   description = "The security policy if using HTTPS externally on the load balancer. [See](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html)."
   type        = string
   default     = "ELBSecurityPolicy-2016-08"
+}
+
+# EFS
+variable "use_efs" {
+  description = "Wheter to create an AWS EFS Network File System"
+  type        = bool
+  default     = false
 }
 
 # ACM
@@ -374,7 +387,7 @@ variable "volumes_from" {
 variable "user" {
   description = "The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set."
   type        = string
-  default     = null
+  default     = "root"
 }
 
 variable "ulimits" {

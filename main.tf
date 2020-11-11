@@ -75,6 +75,10 @@ locals {
       name  = "ATLANTIS_HIDE_PREV_PLAN_COMMENTS"
       value = var.atlantis_hide_prev_plan_comments
     },
+    {
+      name  = "ATLANTIS_DATA_DIR"
+      value = var.atlantis_data_dir
+    }
   ]
 
   # Secret access tokens
@@ -178,6 +182,9 @@ module "vpc" {
 
   enable_nat_gateway = true
   single_nat_gateway = true
+
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
   tags = local.tags
 }
@@ -319,6 +326,15 @@ module "atlantis_sg" {
       source_security_group_id = module.alb_https_sg.this_security_group_id
     },
   ]
+  ingress_with_cidr_blocks = [
+    {
+      from_port                = 2049
+      to_port                  = 2049
+      protocol                 = "tcp"
+      description              = "EFS"
+      cidr_blocks              = "0.0.0.0/0"
+    },
+  ]
 
   egress_rules = ["all-all"]
 
@@ -358,6 +374,29 @@ resource "aws_route53_record" "atlantis" {
   }
 }
 
+###################
+# EFS
+###################
+module "efs" {
+  source     = "cloudposse/efs/aws" 
+  version    = "v0.22.0"
+
+  enabled             = var.use_efs
+  name                = "${var.name}-efs"
+  region              = data.aws_region.current.name
+  vpc_id              = local.vpc_id
+  allowed_cidr_blocks = ["10.32.0.0/16"]
+  subnets             = local.private_subnet_ids
+  security_groups     = [module.atlantis_sg.this_security_group_id]
+  zone_id             = data.aws_route53_zone.this[0].zone_id
+
+  tags = merge(
+    {
+      "Name" = "${var.name}-efs"
+    },
+    var.tags,
+  )
+}
 ###################
 # ECS
 ###################
@@ -469,7 +508,7 @@ resource "aws_iam_role_policy" "assume_allow" {
 
 module "container_definition_github_gitlab" {
   source  = "cloudposse/ecs-container-definition/aws"
-  version = "v0.40.0"
+  version = "v0.44.0"
 
   container_name  = var.name
   container_image = local.atlantis_image
@@ -590,6 +629,18 @@ resource "aws_ecs_task_definition" "atlantis" {
   memory                   = var.ecs_task_memory
 
   container_definitions = local.container_definitions
+
+  dynamic "volume" {
+    for_each = var.use_efs ? ["volume"] : []
+    content {
+      name = "${var.name}-efs"
+
+      efs_volume_configuration {
+        file_system_id = module.efs.id
+        root_directory = "/"
+      }
+    }
+  }
 
   tags = local.tags
 }
