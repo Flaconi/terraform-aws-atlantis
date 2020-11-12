@@ -192,8 +192,8 @@ module "alb" {
   name     = var.name
   internal = var.internal
 
-  vpc_id  = local.vpc_id
-  subnets = local.public_subnet_ids
+  vpc_id          = local.vpc_id
+  subnets         = local.public_subnet_ids
   security_groups = flatten([
     module.alb_https_sg.this_security_group_id, 
     module.alb_http_sg.this_security_group_id, 
@@ -268,8 +268,6 @@ resource "aws_lb_listener_rule" "unauthenticated_access_for_cidr_blocks" {
 
 provider "github" {
   version    = "<=3.1.0"
-  anonymous  = true
-  individual = true
 }
 
 data "github_ip_ranges" "this" {}
@@ -286,7 +284,7 @@ module "alb_https_sg" {
   vpc_id      = local.vpc_id
   description = "Security group with HTTPS ports open for specific IPv4 CIDR block (or everybody), egress ports are all world open"
 
-  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks, var.alb_ingress_cidr_blocks)
+  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks,var.alb_ingress_cidr_blocks)
 
   tags = merge(local.tags, var.alb_https_security_group_tags)
 }
@@ -299,7 +297,7 @@ module "alb_http_sg" {
   vpc_id      = local.vpc_id
   description = "Security group with HTTP ports open for specific IPv4 CIDR block (or everybody), egress ports are all world open"
 
-  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks, var.alb_ingress_cidr_blocks)
+  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks,var.alb_ingress_cidr_blocks)
 
   tags = merge(local.tags, var.alb_http_security_group_tags)
 }
@@ -639,3 +637,4 @@ resource "aws_cloudwatch_log_group" "atlantis" {
 
   tags = local.tags
 }
+
