@@ -2,7 +2,7 @@ ifneq (,)
 .error This Makefile requires GNU Make.
 endif
 
-.PHONY: changelog release lint lint-files terraform-fmt _pull-tf _pull-fl 
+.PHONY: changelog release lint lint-files terraform-fmt _pull-tf _pull-fl
 CURRENT_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # -------------------------------------------------------------------------------------------------
