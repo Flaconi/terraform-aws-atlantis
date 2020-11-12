@@ -1,0 +1,34 @@
+---
+
+###
+### Checks terraform-fmt coding style in terraform/ and terragrunt/
+###
+
+name: linting
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix:
+        target:
+          - terraform-fmt
+          - lint-files
+
+    name: "[ ${{ matrix.target }} ]"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@master
+
+      - name: Lint
+        run: |
+          make ${target} _WRITE=false
+        env:
+          target: ${{ matrix.target }}

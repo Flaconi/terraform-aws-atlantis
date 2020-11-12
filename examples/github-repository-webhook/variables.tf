@@ -7,4 +7,3 @@ variable "github_organization" {
   description = "Github organization"
   type        = string
 }
-

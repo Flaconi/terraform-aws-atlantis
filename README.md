@@ -194,4 +194,3 @@ Module is created and maintained by [Anton Babenko](https://github.com/antonbabe
 ## License
 
 Apache 2 Licensed. See LICENSE for full details.
-
