@@ -153,7 +153,7 @@ If all provided subnets are public (no NAT gateway) then `ecs_service_assign_pub
 | atlantis\_bitbucket\_user | Bitbucket username that is running the Atlantis command | `string` | `""` | no |
 | atlantis\_bitbucket\_user\_token | Bitbucket token of the user that is running the Atlantis command | `string` | `""` | no |
 | atlantis\_bitbucket\_user\_token\_ssm\_parameter\_name | Name of SSM parameter to keep atlantis\_bitbucket\_user\_token | `string` | `"/atlantis/bitbucket/user/token"` | no |
-| atlantis\_data\_dir | n/a | `string` | `null` | no |
+| atlantis\_data\_dir | Directory where Atlantis will store its data. Will be created if it doesn't exist. Defaults to ~/.atlantis | `string` | `"~/.atlantis"` | no |
 | atlantis\_fqdn | FQDN of Atlantis to use. Set this only to override Route53 and ALB's DNS name. | `string` | `null` | no |
 | atlantis\_github\_user | GitHub username that is running the Atlantis command | `string` | `""` | no |
 | atlantis\_github\_user\_token | GitHub token of the user that is running the Atlantis command | `string` | `""` | no |

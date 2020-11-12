@@ -565,7 +565,7 @@ module "container_definition_github_gitlab" {
 
 module "container_definition_bitbucket" {
   source  = "cloudposse/ecs-container-definition/aws"
-  version = "v0.40.0"
+  version = "v0.44.0"
 
   container_name  = var.name
   container_image = local.atlantis_image

@@ -41,9 +41,9 @@ variable "atlantis_fqdn" {
 }
 
 variable "atlantis_data_dir" {
-  description = ""
+  description = "Directory where Atlantis will store its data. Will be created if it doesn't exist. Defaults to ~/.atlantis"
   type        = string
-  default     = null
+  default     = "~/.atlantis"
 }
 
 # VPC
