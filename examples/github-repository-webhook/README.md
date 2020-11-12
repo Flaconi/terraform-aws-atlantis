@@ -1,8 +1,8 @@
 # GitHub repository webhook for Atlantis
 
-Configuration in this directory creates GitHub repository webhooks configured to Atlantis URL. This example uses value of webhook secret which got generated when Atlantis setup by referring to `terraform.tfstate`, so this example has to run after Atlantis. 
+Configuration in this directory creates GitHub repository webhooks configured to Atlantis URL. This example uses value of webhook secret which got generated when Atlantis setup by referring to `terraform.tfstate`, so this example has to run after Atlantis.
 
-GitHub's personal access token can be generated at https://github.com/settings/tokens 
+GitHub's personal access token can be generated at https://github.com/settings/tokens
 
 ## Usage
 
