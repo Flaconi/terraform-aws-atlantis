@@ -1,0 +1,29 @@
+---
+
+###
+### Checks terraform-fmt coding style in terraform/ and terragrunt/
+###
+
+name: terraform-fmt
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix:
+        job: [terraform]
+
+    name: "[ ${{ matrix.job }} ]"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@master
+
+      - name: terraform-fmt
+        run: |
+          cd "${job}"
+          make terraform-fmt
+          git diff --quiet || { echo "Build Changes"; git diff; git status; false; }
+        env:
+          job: ${{ matrix.job }}
