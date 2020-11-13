@@ -25,7 +25,7 @@ locals {
   secret_webhook_key = local.has_secrets || var.atlantis_github_webhook_secret != "" ? var.atlantis_gitlab_user_token != "" ? "ATLANTIS_GITLAB_WEBHOOK_SECRET" : var.atlantis_github_user_token != "" || var.atlantis_github_webhook_secret != "" ? "ATLANTIS_GH_WEBHOOK_SECRET" : "ATLANTIS_BITBUCKET_WEBHOOK_SECRET" : ""
 
   # determine if the alb has authentication enabled, otherwise forward the traffic unauthenticated
-  alb_authenication_method = length(keys(var.alb_authenticate_oidc)) > 0 ? "authenticate-oidc" : length(keys(var.alb_authenticate_cognito)) > 0 ? "authenticate-cognito" : "forward"
+  alb_authentication_method = length(keys(var.alb_authenticate_oidc)) > 0 ? "authenticate-oidc" : length(keys(var.alb_authenticate_cognito)) > 0 ? "authenticate-cognito" : "forward"
 
   # Container definitions
   container_definitions = var.custom_container_definitions == "" ? var.atlantis_bitbucket_user_token != "" ? module.container_definition_bitbucket.json_map_encoded_list : module.container_definition_github_gitlab.json_map_encoded_list : var.custom_container_definitions
@@ -120,7 +120,7 @@ data "aws_route53_zone" "this" {
 # Secret for webhook
 ###################
 resource "random_id" "webhook" {
-  count = var.atlantis_github_webhook_secret != "" ? 0 : 1
+  count       = var.atlantis_github_webhook_secret != "" ? 0 : 1
   byte_length = "64"
 }
 
@@ -199,14 +199,14 @@ module "alb" {
   name     = var.name
   internal = var.internal
 
-  vpc_id          = local.vpc_id
-  subnets         = local.public_subnet_ids
+  vpc_id  = local.vpc_id
+  subnets = local.public_subnet_ids
   security_groups = flatten([
-    module.alb_https_sg.this_security_group_id, 
-    module.alb_http_sg.this_security_group_id, 
+    module.alb_https_sg.this_security_group_id,
+    module.alb_http_sg.this_security_group_id,
     var.security_group_ids,
     data.aws_security_groups.alb[*].ids,
-    ])
+  ])
 
   access_logs = {
     enabled = var.alb_logging_enabled
@@ -221,7 +221,7 @@ module "alb" {
       port                 = 443
       protocol             = "HTTPS"
       certificate_arn      = var.certificate_arn == "" ? module.acm.this_acm_certificate_arn : var.certificate_arn
-      action_type          = local.alb_authenication_method
+      action_type          = local.alb_authentication_method
       authenticate_oidc    = var.alb_authenticate_oidc
       authenticate_cognito = var.alb_authenticate_cognito
     },
@@ -274,7 +274,7 @@ resource "aws_lb_listener_rule" "unauthenticated_access_for_cidr_blocks" {
 ## Github ipranges
 
 provider "github" {
-  version    = "<=3.1.0"
+  version = "<=3.1.0"
 }
 
 data "github_ip_ranges" "this" {}
@@ -291,7 +291,7 @@ module "alb_https_sg" {
   vpc_id      = local.vpc_id
   description = "Security group with HTTPS ports open for specific IPv4 CIDR block (or everybody), egress ports are all world open"
 
-  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks,var.alb_ingress_cidr_blocks)
+  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks, var.alb_ingress_cidr_blocks)
 
   tags = merge(local.tags, var.alb_https_security_group_tags)
 }
@@ -304,7 +304,7 @@ module "alb_http_sg" {
   vpc_id      = local.vpc_id
   description = "Security group with HTTP ports open for specific IPv4 CIDR block (or everybody), egress ports are all world open"
 
-  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks,var.alb_ingress_cidr_blocks)
+  ingress_cidr_blocks = concat(data.github_ip_ranges.this.hooks, var.alb_ingress_cidr_blocks)
 
   tags = merge(local.tags, var.alb_http_security_group_tags)
 }
@@ -328,11 +328,11 @@ module "atlantis_sg" {
   ]
   ingress_with_cidr_blocks = [
     {
-      from_port                = 2049
-      to_port                  = 2049
-      protocol                 = "tcp"
-      description              = "EFS"
-      cidr_blocks              = "0.0.0.0/0"
+      from_port   = 2049
+      to_port     = 2049
+      protocol    = "tcp"
+      description = "EFS"
+      cidr_blocks = "0.0.0.0/0"
     },
   ]
 
@@ -378,14 +378,14 @@ resource "aws_route53_record" "atlantis" {
 # EFS
 ###################
 module "efs" {
-  source     = "cloudposse/efs/aws" 
-  version    = "v0.22.0"
+  source  = "cloudposse/efs/aws"
+  version = "v0.22.0"
 
   enabled             = var.use_efs
   name                = "${var.name}-efs"
   region              = data.aws_region.current.name
   vpc_id              = local.vpc_id
-  allowed_cidr_blocks = ["10.32.0.0/16"]
+  allowed_cidr_blocks = var.private_subnets
   subnets             = local.private_subnet_ids
   security_groups     = [module.atlantis_sg.this_security_group_id]
   zone_id             = data.aws_route53_zone.this[0].zone_id
@@ -688,4 +688,3 @@ resource "aws_cloudwatch_log_group" "atlantis" {
 
   tags = local.tags
 }
-
