@@ -4,10 +4,46 @@ variable "name" {
   default     = "atlantis"
 }
 
+variable "internal" {
+  description = "Whether the load balancer is internal or external"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "A map of tags to use on all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "alb_https_security_group_tags" {
+  description = "Additional tags to put on the https security group"
+  type        = map(string)
+  default     = {}
+}
+
+variable "alb_http_security_group_tags" {
+  description = "Additional tags to put on the http security group"
+  type        = map(string)
+  default     = {}
+}
+
+variable "atlantis_security_group_tags" {
+  description = "Additional tags to put on the atlantis security group"
+  type        = map(string)
+  default     = {}
+}
+
+variable "atlantis_fqdn" {
+  description = "FQDN of Atlantis to use. Set this only to override Route53 and ALB's DNS name."
+  type        = string
+  default     = null
+}
+
+variable "atlantis_data_dir" {
+  description = "Directory where Atlantis will store its data. Will be created if it doesn't exist. Defaults to ~/.atlantis"
+  type        = string
+  default     = "~/.atlantis"
 }
 
 # VPC
@@ -78,6 +114,61 @@ variable "alb_logging_enabled" {
   default     = false
 }
 
+variable "alb_authenticate_oidc" {
+  description = "Map of Authenticate OIDC parameters to protect ALB (eg, using Auth0). See https://www.terraform.io/docs/providers/aws/r/lb_listener.html#authenticate-oidc-action"
+  type        = any
+  default     = {}
+}
+
+variable "alb_authenticate_cognito" {
+  description = "Map of AWS Cognito authentication parameters to protect ALB (eg, using SAML). See https://www.terraform.io/docs/providers/aws/r/lb_listener.html#authenticate-cognito-action"
+  type        = any
+  default     = {}
+}
+
+variable "allow_unauthenticated_access" {
+  description = "Whether to create ALB listener rule to allow unauthenticated access for certain CIDR blocks (eg. allow GitHub webhooks to bypass OIDC authentication)"
+  type        = bool
+  default     = false
+}
+
+variable "allow_unauthenticated_access_priority" {
+  description = "ALB listener rule priority for allow unauthenticated access rule"
+  type        = number
+  default     = 10
+}
+
+variable "allow_github_webhooks" {
+  description = "Whether to allow access for GitHub webhooks"
+  type        = bool
+  default     = false
+}
+
+variable "github_webhooks_cidr_blocks" {
+  description = "List of CIDR blocks used by GitHub webhooks" # This is hardcoded to avoid dependency on github provider. Source: https://api.github.com/meta
+  type        = list(string)
+  default     = ["140.82.112.0/20", "185.199.108.0/22", "192.30.252.0/22"]
+}
+
+variable "whitelist_unauthenticated_cidr_blocks" {
+  description = "List of allowed CIDR blocks to bypass authentication"
+  type        = list(string)
+  default     = []
+}
+
+variable "alb_listener_ssl_policy_default" {
+  description = "The security policy if using HTTPS externally on the load balancer. [See](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html)."
+  type        = string
+  default     = "ELBSecurityPolicy-2016-08"
+}
+
+# EFS
+variable "use_efs" {
+  description = "Wheter to create an AWS EFS Network File System"
+  type        = bool
+  default     = false
+}
+
 # ACM
 variable "certificate_arn" {
   description = "ARN of certificate issued by AWS ACM. If empty, a new ACM certificate will be created and validated using Route53 DNS"
@@ -96,6 +187,12 @@ variable "route53_zone_name" {
   description = "Route53 zone name to create ACM certificate in and main A-record, without trailing dot"
   type        = string
   default     = ""
+}
+
+variable "route53_record_name" {
+  description = "Name of Route53 record to create ACM certificate in and main A-record. If null is specified, var.name is used instead. Provide empty string to point root domain name to ALB."
+  type        = string
+  default     = null
 }
 
 variable "create_route53_record" {
@@ -155,6 +252,12 @@ variable "policies_arn" {
   default     = ["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
 }
 
+variable "ecs_container_insights" {
+  description = "Controls if ECS Cluster has container insights enabled"
+  type        = bool
+  default     = false
+}
+
 variable "ecs_service_desired_count" {
   description = "The number of instances of the task definition to place and keep running"
   type        = number
@@ -203,6 +306,110 @@ variable "custom_container_definitions" {
   default     = ""
 }
 
+variable "entrypoint" {
+  description = "The entry point that is passed to the container"
+  type        = list(string)
+  default     = null
+}
+
+variable "command" {
+  description = "The command that is passed to the container"
+  type        = list(string)
+  default     = null
+}
+
+variable "working_directory" {
+  description = "The working directory to run commands inside the container"
+  type        = string
+  default     = null
+}
+
+variable "repository_credentials" {
+  description = "Container repository credentials; required when using a private repo.  This map currently supports a single key; \"credentialsParameter\", which should be the ARN of a Secrets Manager's secret holding the credentials"
+  type        = map(string)
+  default     = null
+}
+
+variable "docker_labels" {
+  description = "The configuration options to send to the `docker_labels`"
+  type        = map(string)
+  default     = null
+}
+
+variable "start_timeout" {
+  description = "Time duration (in seconds) to wait before giving up on resolving dependencies for a container"
+  type        = number
+  default     = 30
+}
+
+variable "stop_timeout" {
+  description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own"
+  type        = number
+  default     = 30
+}
+
+variable "container_depends_on" {
+  description = "The dependencies defined for container startup and shutdown. A container can contain multiple dependencies. When a dependency is defined for container startup, for container shutdown it is reversed. The condition can be one of START, COMPLETE, SUCCESS or HEALTHY"
+  type = list(object({
+    containerName = string
+    condition     = string
+  }))
+  default = null
+}
+
+variable "essential" {
+  description = "Determines whether all other containers in a task are stopped, if this container fails or stops for any reason. Due to how Terraform type casts booleans in json it is required to double quote this value"
+  type        = bool
+  default     = true
+}
+
+variable "readonly_root_filesystem" {
+  description = "Determines whether a container is given read-only access to its root filesystem. Due to how Terraform type casts booleans in json it is required to double quote this value"
+  type        = bool
+  default     = false
+}
+
+variable "mount_points" {
+  description = "Container mount points. This is a list of maps, where each map should contain a `containerPath` and `sourceVolume`. The `readOnly` key is optional."
+  type        = list
+  default     = []
+}
+
+variable "volumes_from" {
+  description = "A list of VolumesFrom maps which contain \"sourceContainer\" (name of the container that has the volumes to mount) and \"readOnly\" (whether the container can write to the volume)"
+  type = list(object({
+    sourceContainer = string
+    readOnly        = bool
+  }))
+  default = []
+}
+
+variable "user" {
+  description = "The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set."
+  type        = string
+  default     = null
+}
+
+variable "ulimits" {
+  description = "Container ulimit settings. This is a list of maps, where each map should contain \"name\", \"hardLimit\" and \"softLimit\""
+  type = list(object({
+    name      = string
+    hardLimit = number
+    softLimit = number
+  }))
+  default = null
+}
+
+# https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html
+variable "firelens_configuration" {
+  description = "The FireLens configuration for the container. This is used to specify and configure a log router for container logs. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html"
+  type = object({
+    type    = string
+    options = map(string)
+  })
+  default = null
+}
+
 # Atlantis
 variable "atlantis_image" {
   description = "Docker image to run Atlantis with. If not specified, official Atlantis image will be used"
@@ -228,15 +435,33 @@ variable "atlantis_repo_whitelist" {
 }
 
 variable "atlantis_allowed_repo_names" {
-  description = "Github repositories where webhook should be created"
+  description = "Git repositories where webhook should be created"
   type        = list(string)
   default     = []
+}
+
+variable "allow_repo_config" {
+  description = "When true allows the use of atlantis.yaml config files within the source repos."
+  type        = string
+  default     = "false"
 }
 
 variable "atlantis_repo_config_json" {
   description = "The config to be used to overwrite the current config"
   type        = string
   default     = "{\"repos\":[{\"id\":\"/.*/\", \"allowed_overrides\":[\"apply_requirements\",\"workflow\"], \"allow_custom_workflows\":true}]}"
+}
+
+variable "atlantis_log_level" {
+  description = "Log level that Atlantis will run with. Accepted values are: <debug|info|warn|error>"
+  type        = string
+  default     = "debug"
+}
+
+variable "atlantis_hide_prev_plan_comments" {
+  description = "Enables atlantis server --hide-prev-plan-comments hiding previous plan comments on update"
+  type        = string
+  default     = "false"
 }
 
 # Github
@@ -248,6 +473,12 @@ variable "atlantis_github_user" {
 
 variable "atlantis_github_user_token" {
   description = "GitHub token of the user that is running the Atlantis command"
+  type        = string
+  default     = ""
+}
+
+variable "atlantis_github_webhook_secret" {
+  description = "GitHub webhook secret of an app that is running the Atlantis command"
   type        = string
   default     = ""
 }
@@ -278,28 +509,44 @@ variable "atlantis_bitbucket_user" {
   default     = ""
 }
 
-variable "terragrunt_version" {
-  description = "Terragrunt version to download"
-  type        = string
-  default     = "v0.21.1"
-}
-
 variable "atlantis_bitbucket_user_token" {
   description = "Bitbucket token of the user that is running the Atlantis command"
   type        = string
   default     = ""
 }
 
+variable "atlantis_bitbucket_base_url" {
+  description = "Base URL of Bitbucket Server, use for Bitbucket on prem (Stash)"
+  type        = string
+  default     = ""
+}
+
 variable "custom_environment_secrets" {
   description = "List of additional secrets the container will use (list should contain maps with `name` and `valueFrom`)"
-  type        = list(map(string))
-  default     = []
+  type = list(object(
+    {
+      name      = string
+      valueFrom = string
+    }
+  ))
+  default = []
 }
+variable "terragrunt_version" {
+  description = "Terragrunt version to download"
+  type        = string
+  default     = "v0.21.1"
+}
+
 
 variable "custom_environment_variables" {
   description = "List of additional environment variables the container will use (list should contain maps with `name` and `value`)"
-  type        = list(map(string))
-  default     = []
+  type = list(object(
+    {
+      name  = string
+      value = string
+    }
+  ))
+  default = []
 }
 
 variable "security_group_ids" {
