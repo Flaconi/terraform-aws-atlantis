@@ -385,6 +385,7 @@ module "efs" {
   enabled             = var.use_efs
   name                = "${var.name}-efs"
   region              = data.aws_region.current.name
+  encrypted           = true
   vpc_id              = local.vpc_id
   allowed_cidr_blocks = var.private_subnets
   subnets             = local.private_subnet_ids
