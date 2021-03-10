@@ -179,8 +179,13 @@ module "vpc" {
   cidr            = var.cidr
   azs             = var.azs
   private_subnets = var.private_subnets
-  public_subnets  = var.public_subnets
-
+  private_subnets_tags = {
+    Type = "Private"
+  }
+  public_subnets = var.public_subnets
+  public_subnet_tags = {
+    Type = "Public"
+  }
   enable_nat_gateway = true
   single_nat_gateway = true
 
