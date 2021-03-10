@@ -179,7 +179,7 @@ module "vpc" {
   cidr            = var.cidr
   azs             = var.azs
   private_subnets = var.private_subnets
-  private_subnets_tags = {
+  private_subnet_tags = {
     Type = "Private"
   }
   public_subnets = var.public_subnets
